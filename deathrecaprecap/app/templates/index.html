@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+    html {
+        background-color: rgb(86, 86, 87);
+    }
+    svg {
+        background-color: rgb(86, 86, 87);
+    }
+
+    #my_dataviz {
+        border-width: 5px;
+    }
+</style>
+
+<!-- Load d3.js & color palette-->
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<div id="static-image-container">
+    <div hidden id="overview.png" data-img-url="{% static 'app/overview.png' %}"></div>
+    {% for image_name in image_names %}
+        <div hidden id="{{image_name}}" data-img-url="{% static 'app/champ_images/'|add:image_name %}"></div>
+    {% endfor %}
+</div>
+
+<form method="post" id="load_game_form" action="{% url 'process_form' %}">
+    {% csrf_token %}
+    <label for="gameid">Match ID:</label><br>
+    <input type="text" id="gameid" name="gameid" value="NA1_4763963000"><br>
+    <input type="submit" value="Submit">
+</form>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script src="{% static 'app/viz.js' %}"></script>
+<script>
+    var newdata = "{{ data|safe }}";
+    if(newdata.length > 0){
+        var doublequoted = newdata.replace(/'/g, '"');
+        console.log(newdata);
+        console.log(JSON.parse(doublequoted));
+        reload("overview", true, JSON.parse(doublequoted));
+    }
+</script>
