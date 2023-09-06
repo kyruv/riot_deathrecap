@@ -3,7 +3,7 @@ import requests
 class DeathData:
 
     def __init__(self):
-        self.api_key = "RGAPI-2f805baf-cc5f-465d-a387-757517fe4b88"
+        self.api_key = "RGAPI-e095cb6e-a409-4755-8b65-f001e9ba48c7"
 
     def create(self, gameid):
         all_death_data = self.condense_damage_sources(self.get_champion_kill_data(self.get_match_data(gameid)))
