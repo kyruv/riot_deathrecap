@@ -16,6 +16,7 @@ function prepare_data(data, focus, team) {
                 "physical": d["as_killer"]["aggregate"]["physical"],
                 "magic": d["as_killer"]["aggregate"]["magic"],
                 "true": d["as_killer"]["aggregate"]["true"],
+                "aa": d["as_killer"]["aggregate"]["aa"],
                 "q": d["as_killer"]["aggregate"]["q"],
                 "w": d["as_killer"]["aggregate"]["w"],
                 "e": d["as_killer"]["aggregate"]["e"],
@@ -42,6 +43,7 @@ function prepare_data(data, focus, team) {
                             "physical": d["as_killer"][key]["physical"],
                             "magic": d["as_killer"][key]["magic"],
                             "true": d["as_killer"][key]["true"],
+                            "aa": d["as_killer"][key]["aa"],
                             "q": d["as_killer"][key]["q"],
                             "w": d["as_killer"][key]["w"],
                             "e": d["as_killer"][key]["e"],
@@ -61,6 +63,7 @@ function prepare_data(data, focus, team) {
                             "physical": d["as_victim"][key]["physical"],
                             "magic": d["as_victim"][key]["magic"],
                             "true": d["as_victim"][key]["true"],
+                            "aa": d["as_victim"][key]["aa"],
                             "q": d["as_victim"][key]["q"],
                             "w": d["as_victim"][key]["w"],
                             "e": d["as_victim"][key]["e"],
@@ -95,6 +98,7 @@ function aggregate_death_data(start, end){
             var magic = killer_info["magic"];
             var trued = killer_info["true"];
             var total = physical + magic + trued;
+            var aa = killer_info["aa"];
             var q = killer_info["q"];
             var w = killer_info["w"];
             var e = killer_info["e"];
@@ -106,36 +110,45 @@ function aggregate_death_data(start, end){
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["physical"] += physical;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["magic"] += magic;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["true"] += trued;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["aa"] += aa;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["q"] += q;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["w"] += w;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["e"] += e;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["r"] += r;
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["other"] += other;
-            aggregated_data_copy[killer]["as_killer"]["aggregate"]["other_names"] += other_names;
+            existing_other_names = new Set(aggregated_data_copy[killer]["as_killer"]["aggregate"]["other_names"])
+            other_names.forEach(spell => existing_other_names.add(spell));
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["other_names"] = Array.from(existing_other_names);
             aggregated_data_copy[killer]["as_killer"]["aggregate"]["takedowns"] += 1;
 
             aggregated_data_copy[killer]["as_killer"][victim]["total"] += total;
             aggregated_data_copy[killer]["as_killer"][victim]["physical"] += physical;
             aggregated_data_copy[killer]["as_killer"][victim]["magic"] += magic;
             aggregated_data_copy[killer]["as_killer"][victim]["true"] += trued;
+            aggregated_data_copy[killer]["as_killer"][victim]["aa"] += aa;
             aggregated_data_copy[killer]["as_killer"][victim]["q"] += q;
             aggregated_data_copy[killer]["as_killer"][victim]["w"] += w;
             aggregated_data_copy[killer]["as_killer"][victim]["e"] += e;
             aggregated_data_copy[killer]["as_killer"][victim]["r"] += r;
             aggregated_data_copy[killer]["as_killer"][victim]["other"] += other;
-            aggregated_data_copy[killer]["as_killer"][victim]["other_names"] += other_names;
+            existing_other_names = new Set(aggregated_data_copy[killer]["as_killer"][victim]["other_names"])
+            other_names.forEach(spell => existing_other_names.add(spell));
+            aggregated_data_copy[killer]["as_killer"][victim]["other_names"] = Array.from(existing_other_names);
             aggregated_data_copy[killer]["as_killer"][victim]["takedowns"] += 1;
 
             aggregated_data_copy[victim]["as_victim"][killer]["total"] += total;
             aggregated_data_copy[victim]["as_victim"][killer]["physical"] += physical;
             aggregated_data_copy[victim]["as_victim"][killer]["magic"] += magic;
             aggregated_data_copy[victim]["as_victim"][killer]["true"] += trued;
+            aggregated_data_copy[victim]["as_victim"][killer]["aa"] += aa;
             aggregated_data_copy[victim]["as_victim"][killer]["q"] += q;
             aggregated_data_copy[victim]["as_victim"][killer]["w"] += w;
             aggregated_data_copy[victim]["as_victim"][killer]["e"] += e;
             aggregated_data_copy[victim]["as_victim"][killer]["r"] += r;
             aggregated_data_copy[victim]["as_victim"][killer]["other"] += other;
-            aggregated_data_copy[victim]["as_victim"][killer]["other_names"] += other_names;
+            existing_other_names = new Set(aggregated_data_copy[victim]["as_victim"][killer]["other_names"])
+            other_names.forEach(spell => existing_other_names.add(spell));
+            aggregated_data_copy[victim]["as_victim"][killer]["other_names"] = Array.from(existing_other_names);
             aggregated_data_copy[victim]["as_victim"][killer]["takedowns"] += 1;
         });
 
@@ -194,10 +207,11 @@ function reload(focus, provided_data=false, newdata=undefined){
     z = d3.scaleOrdinal()
         .range(["indianred", "royalblue", "gainsboro"]);
     
-    data = aggregate_death_data(1200000, 1000000000);
+    data = aggregate_death_data(0, 1000000000);
 
     
     data = prepare_data(data, focus);
+    console.log(data);
     data_red = data.slice(0,5);
     data_blue = data.slice(5);
 
@@ -300,17 +314,23 @@ function reload(focus, provided_data=false, newdata=undefined){
         .style('cursor', 'pointer');
 
     g.selectAll(".bar")
-        .data(d3.stack().keys(["physical", "magic", "true"])(data_blue))
+        .data(d3.stack().keys(["aa", "q", "w", "e", "r", "other"])(data_blue))
         .enter().append("g")
         .attr("fill", function(d) { return z(d.key);})
         .selectAll("rect").data(function(d) { return d; })
         .enter().append("rect")
         .attr("x", function(d,i) { return x(d[0]); })
         .attr("y", function(d) { return y(d.data.name); })
-        .attr("width", function(d) { return x(d[1] - d[0]); })
+        .attr("width", function(d) { console.log(d); return x(d[1] - d[0]); })
         .attr("height", Math.min(80,height/8))
         .append("svg:title")
-        .text(function(d) { return (d[1] - d[0]).toLocaleString("en-US") + " " + d3.select(this.parentNode.parentNode).datum().key + "."; });
+        .text(function(d) {
+            var label = "" + d3.select(this.parentNode.parentNode).datum().key;
+            if (label == "other"){
+                label += " ("+d.data.other_names+")";
+            }
+            return (d[1] - d[0]).toLocaleString("en-US") + " " + label + "."; 
+        });
     
     // draw the red team data
     y.domain(data_red.map(function(d,i) {return d.name;}));
@@ -355,8 +375,11 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("transform", "translate("+(width+100)+",0)")
         .on("click", function(d) {return reload(d.name);})
         .style('cursor', 'pointer');
+
+        
+        // ["physical", "magic", "true"]
     g.selectAll(".bar")
-        .data(d3.stack().keys(["physical", "magic", "true"])(data_red))
+        .data(d3.stack().keys(["aa", "q", "w", "e", "r", "other"])(data_red))
         .enter().append("g")
         .attr("fill", function(d) { return z(d.key);})
         .selectAll("rect").data(function(d) { return d; })
@@ -367,7 +390,13 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("width", function(d) { return x(d[1] - d[0]); })
         .attr("height", Math.min(80,height/8))
         .append("svg:title")
-        .text(function(d) { return (d[1] - d[0]).toLocaleString("en-US") + " " + d3.select(this.parentNode.parentNode).datum().key + "."; });
+        .text(function(d) {
+            var label = "" + d3.select(this.parentNode.parentNode).datum().key;
+            if (label == "other"){
+                label += " ("+d.data.other_names+")";
+            }
+            return (d[1] - d[0]).toLocaleString("en-US") + " " + label + "."; 
+        });
 
 
 }

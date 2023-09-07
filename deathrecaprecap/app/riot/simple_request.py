@@ -1,6 +1,10 @@
 import requests
 
 class DeathData:
+    
+    special_aa_mapping = set([
+        "tristanacritattack",
+    ])
 
     spell_mapping = {
     "aatrox": {
@@ -298,9 +302,11 @@ class DeathData:
     },
     "jayce": {
       "jaycetotheskies": "q",
+      "jayceshockblast": "q",
       "jaycestaticfield": "w",
       "jaycethunderingblow": "e",
-      "jaycestancehtg": "r"
+      "jaycestancehtg": "r",
+      "jaycestancegth": "r"
     },
     "jhin": {
       "jhinq": "q",
@@ -1042,24 +1048,29 @@ class DeathData:
                                 "e": 0,
                                 "r": 0,
                                 "other": 0,
-                                "other_names": set(),
+                                "other_names": [],
                             }
                         
                         killers[ds["name"]]["physical"] += ds["physicalDamage"]
                         killers[ds["name"]]["magic"] += ds["magicDamage"]
                         killers[ds["name"]]["true"] += ds["trueDamage"]
 
-                        if "basicattack" in ds["spellName"].lower():
+                        if "basicattack" in ds["spellName"].lower() or ds["spellName"].lower() in DeathData.special_aa_mapping:
                             killers[ds["name"]]["aa"] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
                         else:
                             spell_type = DeathData.spell_mapping[ds["name"].lower()].get(ds["spellName"].lower(), "other")
                             killers[ds["name"]][spell_type] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
 
                             if spell_type == "other":
-                                killers[ds["name"]]["other_names"].add(ds["spellName"].lower())
+                                spell_name = ds["spellName"].lower()
+                                if spell_name == "":
+                                    spell_name = "<empty_spell_name>"
+                                killers[ds["name"]]["other_names"].append(spell_name)
                     
                     for key in killers:
-                        killers[key]["other_names"] = list(killers[key]["other_names"])
+                        print(killers[key]["other_names"])
+                        killers[key]["other_names"] = list(set(killers[key]["other_names"]))
+                        print(killers[key]["other_names"])
 
 
                     deaths.append({
@@ -1102,6 +1113,7 @@ class DeathData:
                 'physical': 0,
                 'magic': 0,
                 'true': 0,
+                'aa': 0,
                 'q': 0,
                 'w': 0,
                 'e': 0,
@@ -1117,6 +1129,7 @@ class DeathData:
                     'physical': 0,
                     'magic': 0,
                     'true': 0,
+                    'aa': 0,
                     'q': 0,
                     'w': 0,
                     'e': 0,
@@ -1130,6 +1143,7 @@ class DeathData:
                     'physical': 0,
                     'magic': 0,
                     'true': 0,
+                    'aa': 0,
                     'q': 0,
                     'w': 0,
                     'e': 0,
@@ -1149,6 +1163,7 @@ class DeathData:
                 'physical': 0,
                 'magic': 0,
                 'true': 0,
+                'aa': 0,
                 'q': 0,
                 'w': 0,
                 'e': 0,
@@ -1164,6 +1179,7 @@ class DeathData:
                     'physical': 0,
                     'magic': 0,
                     'true': 0,
+                    'aa': 0,
                     'q': 0,
                     'w': 0,
                     'e': 0,
@@ -1177,6 +1193,7 @@ class DeathData:
                     'physical': 0,
                     'magic': 0,
                     'true': 0,
+                    'aa': 0,
                     'q': 0,
                     'w': 0,
                     'e': 0,
