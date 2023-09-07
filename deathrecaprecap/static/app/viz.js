@@ -83,7 +83,7 @@ function prepare_data(data, focus, team) {
 function aggregate_death_data(start, end){
     var aggregated_data_copy = JSON.parse(JSON.stringify(aggregate_placeholder));
     all_death_data.forEach(death => {
-        if(death.timeStamp < start || death.timeStamp > end){
+        if(death.timestamp < start || death.timestamp > end){
             return;
         }
 
@@ -194,7 +194,7 @@ function reload(focus, provided_data=false, newdata=undefined){
     z = d3.scaleOrdinal()
         .range(["indianred", "royalblue", "gainsboro"]);
     
-    data = aggregate_death_data(0, 1000000000000000);
+    data = aggregate_death_data(1200000, 1000000000);
 
     
     data = prepare_data(data, focus);
