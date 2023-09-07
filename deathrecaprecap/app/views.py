@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
-from app.riot.request import DeathData
+from app.riot.simple_request import DeathData
 from app.riot.champs import ChampNames
 
 def index(request):
