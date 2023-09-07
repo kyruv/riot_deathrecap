@@ -165,7 +165,7 @@ function aggregate_death_data(start, end){
 }
 
 
-function reload(focus, provided_data=false, newdata=undefined){
+function reload(focus, provided_data=false, newdata=undefined, start_time=0, end_time=1000000){
     if(provided_data){
         all_death_data = newdata["all_deaths"];
         aggregate_placeholder = newdata["aggregate_placeholder"];
@@ -173,6 +173,13 @@ function reload(focus, provided_data=false, newdata=undefined){
     if(all_death_data == undefined){
         return;
     }
+
+    var pos_map = {};
+    var team_map = {}
+    Object.keys(aggregate_placeholder).forEach(function (key, i) {
+        pos_map[key] = i % 5;
+        team_map[key] = i < 5 ? 0 : 1;
+    });
 
     console.log(provided_data);
 
@@ -216,7 +223,7 @@ function reload(focus, provided_data=false, newdata=undefined){
     }
     
     
-    data = aggregate_death_data(0, 1000000000);
+    data = aggregate_death_data(start_time, end_time);
     
     data = prepare_data(data, focus);
     console.log(data);
@@ -327,7 +334,7 @@ function reload(focus, provided_data=false, newdata=undefined){
         .enter().append("rect")
         .attr("x", function(d,i) { return x(d[0]); })
         .attr("y", function(d) { return y(d.data.name); })
-        .attr("width", function(d) { console.log(d); return x(d[1] - d[0]); })
+        .attr("width", function(d) { return x(d[1] - d[0]); })
         .attr("height", Math.min(80,height/10))
         .on("click", function(d) {
             if(damage_breakdown == "spell"){
@@ -428,13 +435,71 @@ function reload(focus, provided_data=false, newdata=undefined){
         return d.timestamp;
     })];
     tscalex.domain(txdomain);
-    var timeline = svg.append("g")
+    var tscalez = d3.scaleOrdinal().range(["blue", "red"]).domain([0,1]);
+    var tscaley = d3.scaleLinear()
+        .range([0, 100])
+        .domain([0,5]);
+    var timeline = svg.append("g");
+    timeline
         .append("rect")
         .attr("x", tx)
         .attr("y", ty)
         .attr("width", width)
         .attr("height", 100)
-        .attr("fill", "red");
+        .attr("fill", "grey");
+    timeline
+        .append('line')
+        .style("stroke", "darkgrey")
+        .style("stroke-width", 1)
+        .attr("x1", tx)
+        .attr("y1", ty+20)
+        .attr("x2", tx + width)
+        .attr("y2", ty+20)
+    timeline
+        .append('line')
+        .style("stroke", "darkgrey")
+        .style("stroke-width", 1)
+        .attr("x1", tx)
+        .attr("y1", ty+40)
+        .attr("x2", tx + width)
+        .attr("y2", ty+40)
+    timeline
+        .append('line')
+        .style("stroke", "darkgrey")
+        .style("stroke-width", 1)
+        .attr("x1", tx)
+        .attr("y1", ty+60)
+        .attr("x2", tx + width)
+        .attr("y2", ty+60)
+    timeline
+        .append('line')
+        .style("stroke", "darkgrey")
+        .style("stroke-width", 1)
+        .attr("x1", tx)
+        .attr("y1", ty+80)
+        .attr("x2", tx + width)
+        .attr("y2", ty+80)
+
+    timeline.selectAll(".deaths")
+        .data(all_death_data)
+        .enter()
+        .append("circle")
+        .attr("cx", function(d) {
+            return tx + tscalex(d.timestamp);
+        })
+        .attr("cy", function(d) {
+            return ty + 10 + tscaley(pos_map[d.who]);
+        })
+        .attr("r", 7)
+        .attr("fill", function(d){
+            return tscalez(team_map[d.who]);
+        })
+        .on("click", function(d){
+            console.log("HERE " + d.timestamp);
+            return reload(focus, start_time=d.timestamp, end_time=d.timestamp);
+        })
+        .style('cursor', 'pointer');
+
     // timeline.selectAll(".bar")
     //     .data(data)
     //     .enter().append("g")
