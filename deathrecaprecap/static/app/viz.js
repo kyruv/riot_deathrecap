@@ -1,5 +1,6 @@
 var all_death_data = undefined;
 var aggregate_placeholder = undefined;
+var damage_breakdown = "spell";
 
 // set the dimensions and margins of the graph
 var margin = {top: 150, right: 100, bottom: 20, left: 100},
@@ -203,12 +204,19 @@ function reload(focus, provided_data=false, newdata=undefined){
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     var x = d3.scaleLinear().range([0, width/2-5]),
-    y = d3.scaleBand().range([height, 0]).paddingInner(0.05).align(0.1),
-    z = d3.scaleOrdinal()
-        .range(["indianred", "royalblue", "gainsboro"]);
+    y = d3.scaleBand().range([height, 0]).paddingInner(0.05).align(0.1);
+    var keys = [];
+    if(damage_breakdown == "type"){
+        z = d3.scaleOrdinal()
+            .range(["indianred", "royalblue", "gainsboro"]);
+        keys = ["physical", "magic", "true"]
+    } else if(damage_breakdown == "spell"){
+        z = d3.scaleOrdinal().range(["#d73027","#fc8d59","#fee090","#e0f3f8","#91bfdb","#4575b4"]);
+        keys = ["aa", "q", "w", "e", "r", "other"];
+    }
+    
     
     data = aggregate_death_data(0, 1000000000);
-
     
     data = prepare_data(data, focus);
     console.log(data);
@@ -314,7 +322,7 @@ function reload(focus, provided_data=false, newdata=undefined){
         .style('cursor', 'pointer');
 
     g.selectAll(".bar")
-        .data(d3.stack().keys(["aa", "q", "w", "e", "r", "other"])(data_blue))
+        .data(d3.stack().keys(keys)(data_blue))
         .enter().append("g")
         .attr("fill", function(d) { return z(d.key);})
         .selectAll("rect").data(function(d) { return d; })
@@ -323,6 +331,14 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("y", function(d) { return y(d.data.name); })
         .attr("width", function(d) { console.log(d); return x(d[1] - d[0]); })
         .attr("height", Math.min(80,height/8))
+        .on("click", function(d) {
+            if(damage_breakdown == "spell"){
+                damage_breakdown = "type";
+            } else {
+                damage_breakdown = "spell";
+            }
+            return reload(focus);
+        })
         .append("svg:title")
         .text(function(d) {
             var label = "" + d3.select(this.parentNode.parentNode).datum().key;
@@ -377,9 +393,8 @@ function reload(focus, provided_data=false, newdata=undefined){
         .style('cursor', 'pointer');
 
         
-        // ["physical", "magic", "true"]
     g.selectAll(".bar")
-        .data(d3.stack().keys(["aa", "q", "w", "e", "r", "other"])(data_red))
+        .data(d3.stack().keys(keys)(data_red))
         .enter().append("g")
         .attr("fill", function(d) { return z(d.key);})
         .selectAll("rect").data(function(d) { return d; })
@@ -389,6 +404,14 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("transform", "scale(-1, 1) translate(-"+width+", 0)")
         .attr("width", function(d) { return x(d[1] - d[0]); })
         .attr("height", Math.min(80,height/8))
+        .on("click", function(d) {
+            if(damage_breakdown == "spell"){
+                damage_breakdown = "type";
+            } else {
+                damage_breakdown = "spell";
+            }
+            return reload(focus);
+        })
         .append("svg:title")
         .text(function(d) {
             var label = "" + d3.select(this.parentNode.parentNode).datum().key;

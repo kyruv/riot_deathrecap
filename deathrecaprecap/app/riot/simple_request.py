@@ -1068,9 +1068,7 @@ class DeathData:
                                 killers[ds["name"]]["other_names"].append(spell_name)
                     
                     for key in killers:
-                        print(killers[key]["other_names"])
                         killers[key]["other_names"] = list(set(killers[key]["other_names"]))
-                        print(killers[key]["other_names"])
 
 
                     deaths.append({
