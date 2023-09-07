@@ -62,7 +62,9 @@ class DeathData:
       "apheliosinfernumq": "q",
       "aphelioscrescendumq": "q",
       "apheliosq_clienttooltipwrapper": "q",
-      "apheliosw": "w",
+
+      # i think apheliosw is actually his AA
+      "apheliosw": "aa",
       "apheliose_clienttooltipwrapper": "e",
       "apheliosr": "r"
     },

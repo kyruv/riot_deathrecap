@@ -27,15 +27,15 @@
     {% endfor %}
 </div>
 
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
 <form method="post" id="load_game_form" action="{% url 'process_form' %}">
     {% csrf_token %}
     <label for="gameid">Match ID:</label><br>
     <input type="text" id="gameid" name="gameid" value="NA1_4763963000"><br>
     <input type="submit" value="Submit">
 </form>
-
-<!-- Create a div where the graph will take place -->
-<div id="my_dataviz"></div>
 
 <script src="{% static 'app/viz.js' %}"></script>
 <script>

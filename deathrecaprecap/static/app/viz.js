@@ -197,14 +197,14 @@ function reload(focus, provided_data=false, newdata=undefined){
     .attr("x1", margin.left + width/2)
     .attr("y1", 115)
     .attr("x2", margin.left + width/2)
-    .attr("y2", height+margin.top-margin.bottom)
+    .attr("y2", .75*height+margin.top-margin.bottom)
     
 
     var g = svg.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     var x = d3.scaleLinear().range([0, width/2-5]),
-    y = d3.scaleBand().range([height, 0]).paddingInner(0.05).align(0.1);
+    y = d3.scaleBand().range([.75*height, 0]).paddingInner(0.05).align(0.1);
     var keys = [];
     if(damage_breakdown == "type"){
         z = d3.scaleOrdinal()
@@ -256,8 +256,8 @@ function reload(focus, provided_data=false, newdata=undefined){
         title.attr("transform", "translate("+(width/2 + margin.left - (title.node().getBBox().width/2)) +",0)");
 
         svg.append("g").append("svg:image")
-        .attr('width', Math.min(80,height/6))
-        .attr('height', Math.min(80,height/6))
+        .attr('width', Math.min(80,height/8))
+        .attr('height', Math.min(80,height/8))
         .attr("xlink:href", document.getElementById("overview.png").getAttribute("data-img-url"))
         .attr("y", 2)
         .on("click", function(d) {return reload("overview");})
@@ -276,8 +276,6 @@ function reload(focus, provided_data=false, newdata=undefined){
             .style("font-size", "28px")
             .attr("x", width + margin.right - BrowserText.getWidth("Champions who killed me", 28))
             .attr("y", 105);
-
-        
     }
 
     // share a scale for the x domain
@@ -311,10 +309,10 @@ function reload(focus, provided_data=false, newdata=undefined){
         .data(data_blue)
         .enter()
         .append("svg:image")
-        .attr("x", function(d,i) { return x(0) - (Math.min(80,height/8)+10); })
+        .attr("x", function(d,i) { return x(0) - (Math.min(80,height/10)+10); })
         .attr("y", function(d) { return y(d.name); })
-        .attr('width', Math.min(80,height/8))
-        .attr('height', Math.min(80,height/8))
+        .attr('width', Math.min(80,height/10))
+        .attr('height', Math.min(80,height/10))
         .attr("xlink:href", function(d) {
             return document.getElementById(d.name+".jpg").getAttribute("data-img-url");
         })
@@ -330,7 +328,7 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("x", function(d,i) { return x(d[0]); })
         .attr("y", function(d) { return y(d.data.name); })
         .attr("width", function(d) { console.log(d); return x(d[1] - d[0]); })
-        .attr("height", Math.min(80,height/8))
+        .attr("height", Math.min(80,height/10))
         .on("click", function(d) {
             if(damage_breakdown == "spell"){
                 damage_breakdown = "type";
@@ -385,8 +383,8 @@ function reload(focus, provided_data=false, newdata=undefined){
         .append("svg:image")
         .attr("x", function(d,i) { return x(0) - 90; })
         .attr("y", function(d) { return y(d.name); })
-        .attr('width', Math.min(80,height/8))
-        .attr('height', Math.min(80,height/8))
+        .attr('width', Math.min(80,height/10))
+        .attr('height', Math.min(80,height/10))
         .attr("xlink:href", function(d) {return document.getElementById(d.name+".jpg").getAttribute("data-img-url");})
         .attr("transform", "translate("+(width+100)+",0)")
         .on("click", function(d) {return reload(d.name);})
@@ -403,7 +401,7 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr("y", function(d) { return y(d.data.name); })
         .attr("transform", "scale(-1, 1) translate(-"+width+", 0)")
         .attr("width", function(d) { return x(d[1] - d[0]); })
-        .attr("height", Math.min(80,height/8))
+        .attr("height", Math.min(80,height/10))
         .on("click", function(d) {
             if(damage_breakdown == "spell"){
                 damage_breakdown = "type";
@@ -420,6 +418,42 @@ function reload(focus, provided_data=false, newdata=undefined){
             }
             return (d[1] - d[0]).toLocaleString("en-US") + " " + label + "."; 
         });
+    
+    // TIMELINE
+    var tx = margin.left * 2,
+        ty = margin.top + height*.75;
+
+    var tscalex = d3.scaleLinear().range([0, width]);
+    var txdomain=[0, d3.max(all_death_data, function(d) {
+        return d.timestamp;
+    })];
+    tscalex.domain(txdomain);
+    var timeline = svg.append("g")
+        .append("rect")
+        .attr("x", tx)
+        .attr("y", ty)
+        .attr("width", width)
+        .attr("height", 100)
+        .attr("fill", "red");
+    // timeline.selectAll(".bar")
+    //     .data(data)
+    //     .enter().append("g")
+    //     .attr("fill", function(d) { return z(d.key);})
+    //     .selectAll("rect").data(function(d) { return d; })
+    //     .enter().append("rect")
+    //     .attr("x", function(d,i) { return x(d[0]); })
+    //     .attr("y", function(d) { return y(d.data.name); })
+    //     .attr("transform", "scale(-1, 1) translate(-"+width+", 0)")
+    //     .attr("width", function(d) { return x(d[1] - d[0]); })
+    //     .attr("height", Math.min(80,height/10))
+    //     .on("click", function(d) {
+    //         if(damage_breakdown == "spell"){
+    //             damage_breakdown = "type";
+    //         } else {
+    //             damage_breakdown = "spell";
+    //         }
+    //         return reload(focus);
+    //     })
 
 
 }
