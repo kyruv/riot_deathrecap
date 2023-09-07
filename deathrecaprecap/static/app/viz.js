@@ -1,4 +1,5 @@
-var cacheddata = undefined;
+var all_death_data = undefined;
+var aggregate_placeholder = undefined;
 
 // set the dimensions and margins of the graph
 var margin = {top: 150, right: 100, bottom: 20, left: 100},
@@ -15,7 +16,13 @@ function prepare_data(data, focus, team) {
                 "physical": d["as_killer"]["aggregate"]["physical"],
                 "magic": d["as_killer"]["aggregate"]["magic"],
                 "true": d["as_killer"]["aggregate"]["true"],
+                "q": d["as_killer"]["aggregate"]["q"],
+                "w": d["as_killer"]["aggregate"]["w"],
+                "e": d["as_killer"]["aggregate"]["e"],
+                "r": d["as_killer"]["aggregate"]["r"],
+                "other": d["as_killer"]["aggregate"]["other"],
                 "takedowns": d["as_killer"]["aggregate"]["takedowns"],
+                "other_names": d["as_killer"]["aggregate"]["other_names"],
             });
         });
         return prepared_data.reverse();
@@ -35,7 +42,13 @@ function prepare_data(data, focus, team) {
                             "physical": d["as_killer"][key]["physical"],
                             "magic": d["as_killer"][key]["magic"],
                             "true": d["as_killer"][key]["true"],
+                            "q": d["as_killer"][key]["q"],
+                            "w": d["as_killer"][key]["w"],
+                            "e": d["as_killer"][key]["e"],
+                            "r": d["as_killer"][key]["r"],
+                            "other": d["as_killer"][key]["other"],
                             "takedowns": d["as_killer"][key]["takedowns"],
+                            "other_names": d["as_killer"][key]["other_names"],
                         });
                     }
                 }
@@ -48,7 +61,13 @@ function prepare_data(data, focus, team) {
                             "physical": d["as_victim"][key]["physical"],
                             "magic": d["as_victim"][key]["magic"],
                             "true": d["as_victim"][key]["true"],
+                            "q": d["as_victim"][key]["q"],
+                            "w": d["as_victim"][key]["w"],
+                            "e": d["as_victim"][key]["e"],
+                            "r": d["as_victim"][key]["r"],
+                            "other": d["as_victim"][key]["other"],
                             "takedowns": d["as_victim"][key]["takedowns"],
+                            "other_names": d["as_victim"][key]["other_names"],
                         });
                     }
                 }
@@ -61,15 +80,87 @@ function prepare_data(data, focus, team) {
     }
 };
 
+function aggregate_death_data(start, end){
+    var aggregated_data_copy = JSON.parse(JSON.stringify(aggregate_placeholder));
+    all_death_data.forEach(death => {
+        if(death.timeStamp < start || death.timeStamp > end){
+            return;
+        }
+
+        var victim = death["who"];
+        
+        death["killers"].forEach(killer_info => {
+            var killer = killer_info["who"];
+            var physical = killer_info["physical"];
+            var magic = killer_info["magic"];
+            var trued = killer_info["true"];
+            var total = physical + magic + trued;
+            var q = killer_info["q"];
+            var w = killer_info["w"];
+            var e = killer_info["e"];
+            var r = killer_info["r"];
+            var other = killer_info["other"];
+            var other_names = killer_info["other_names"];
+
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["total"] += total;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["physical"] += physical;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["magic"] += magic;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["true"] += trued;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["q"] += q;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["w"] += w;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["e"] += e;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["r"] += r;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["other"] += other;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["other_names"] += other_names;
+            aggregated_data_copy[killer]["as_killer"]["aggregate"]["takedowns"] += 1;
+
+            aggregated_data_copy[killer]["as_killer"][victim]["total"] += total;
+            aggregated_data_copy[killer]["as_killer"][victim]["physical"] += physical;
+            aggregated_data_copy[killer]["as_killer"][victim]["magic"] += magic;
+            aggregated_data_copy[killer]["as_killer"][victim]["true"] += trued;
+            aggregated_data_copy[killer]["as_killer"][victim]["q"] += q;
+            aggregated_data_copy[killer]["as_killer"][victim]["w"] += w;
+            aggregated_data_copy[killer]["as_killer"][victim]["e"] += e;
+            aggregated_data_copy[killer]["as_killer"][victim]["r"] += r;
+            aggregated_data_copy[killer]["as_killer"][victim]["other"] += other;
+            aggregated_data_copy[killer]["as_killer"][victim]["other_names"] += other_names;
+            aggregated_data_copy[killer]["as_killer"][victim]["takedowns"] += 1;
+
+            aggregated_data_copy[victim]["as_victim"][killer]["total"] += total;
+            aggregated_data_copy[victim]["as_victim"][killer]["physical"] += physical;
+            aggregated_data_copy[victim]["as_victim"][killer]["magic"] += magic;
+            aggregated_data_copy[victim]["as_victim"][killer]["true"] += trued;
+            aggregated_data_copy[victim]["as_victim"][killer]["q"] += q;
+            aggregated_data_copy[victim]["as_victim"][killer]["w"] += w;
+            aggregated_data_copy[victim]["as_victim"][killer]["e"] += e;
+            aggregated_data_copy[victim]["as_victim"][killer]["r"] += r;
+            aggregated_data_copy[victim]["as_victim"][killer]["other"] += other;
+            aggregated_data_copy[victim]["as_victim"][killer]["other_names"] += other_names;
+            aggregated_data_copy[victim]["as_victim"][killer]["takedowns"] += 1;
+        });
+
+    });
+
+    var listified = [];
+    Object.entries(aggregated_data_copy).forEach(([k,v]) => {
+        v["name"] = k;
+        listified.push(v);
+    });
+
+    return listified;
+}
+
+
 function reload(focus, provided_data=false, newdata=undefined){
     if(provided_data){
-        cacheddata = newdata;
+        all_death_data = newdata["all_deaths"];
+        aggregate_placeholder = newdata["aggregate_placeholder"];
     }
-    if(cacheddata == undefined){
+    if(all_death_data == undefined){
         return;
     }
 
-    console.log("here " + provided_data);
+    console.log(provided_data);
 
     d3.selectAll("svg").remove();
     // append the svg object to the body of the page
@@ -103,7 +194,7 @@ function reload(focus, provided_data=false, newdata=undefined){
     z = d3.scaleOrdinal()
         .range(["indianred", "royalblue", "gainsboro"]);
     
-    data = cacheddata;
+    data = aggregate_death_data(0, 1000000000000000);
 
     
     data = prepare_data(data, focus);
@@ -140,8 +231,6 @@ function reload(focus, provided_data=false, newdata=undefined){
             .style("font-size", "50px")
             .attr("x", Math.min(100,height/5)+5)
             .attr("y", 72);
-        console.log((title.node().getBBox().width/2));
-        console.log(width);
         title.attr("transform", "translate("+(width/2 + margin.left - (title.node().getBBox().width/2)) +",0)");
 
         svg.append("g").append("svg:image")
@@ -205,7 +294,6 @@ function reload(focus, provided_data=false, newdata=undefined){
         .attr('width', Math.min(80,height/8))
         .attr('height', Math.min(80,height/8))
         .attr("xlink:href", function(d) {
-            console.log(document.getElementById(d.name+".jpg").getAttribute("data-img-url"))
             return document.getElementById(d.name+".jpg").getAttribute("data-img-url");
         })
         .on("click", function(d) {return reload(d.name);})
@@ -232,7 +320,6 @@ function reload(focus, provided_data=false, newdata=undefined){
         .append("text")
         .text(function(d) {
             var label = "";
-            console.log(d);
             if(d.takedowns > 1){
                 label = d.total.toLocaleString("en-US") + " ("+ d.takedowns + " takedowns)";
             } else if(d.takedowns == 1){

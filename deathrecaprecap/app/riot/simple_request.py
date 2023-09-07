@@ -995,11 +995,16 @@ class DeathData:
   }
 
     def __init__(self):
-        self.api_key = "RGAPI-e095cb6e-a409-4755-8b65-f001e9ba48c7"
+        self.api_key = "RGAPI-cba6a232-691d-4e44-ac6a-590f1f38ff9e"
         
 
     def create(self, gameid):
-        return self.only_important_data(self.get_match_data(gameid))
+        death_data, champ_map = self.only_important_data(self.get_match_data(gameid))
+        response = {
+            "all_deaths": death_data,
+            "aggregate_placeholder": self.make_aggregate_data_holder(champ_map),
+        }
+        return response
 
     def only_important_data(self, responses):
         detail_response = responses[0]
@@ -1063,7 +1068,7 @@ class DeathData:
                         "killers": list(killers.values()),
                     })
         
-        return deaths
+        return deaths, champ_map
 
     def get_match_data(self, match):
         detailed_request = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match}/timeline"
@@ -1075,5 +1080,112 @@ class DeathData:
         return detail_response, overview_response
 
     
+    def make_aggregate_data_holder(self, champ_map):
+        overview_data = {}
 
+        team_100_participants = []
+        team_200_participants = []
+
+        for name, details in champ_map.items():
+            if details['team'] == 100:
+                team_100_participants.append(name)
+            else:
+                team_200_participants.append(name)
+        
+        for champ in team_100_participants:
+            overview_data[champ] = {
+                'as_killer': {},
+                'as_victim': {},
+            }
+            overview_data[champ]['as_killer']['aggregate'] = {
+                'total': 0,
+                'physical': 0,
+                'magic': 0,
+                'true': 0,
+                'q': 0,
+                'w': 0,
+                'e': 0,
+                'r': 0,
+                'other': 0,
+                'takedowns': 0,
+                'other_names': [],
+            }
+
+            for opponent in team_200_participants:
+                overview_data[champ]['as_killer'][opponent] = {
+                    'total': 0,
+                    'physical': 0,
+                    'magic': 0,
+                    'true': 0,
+                    'q': 0,
+                    'w': 0,
+                    'e': 0,
+                    'r': 0,
+                    'other': 0,
+                    'takedowns': 0,
+                    'other_names': [],
+                }
+                overview_data[champ]['as_victim'][opponent] = {
+                    'total': 0,
+                    'physical': 0,
+                    'magic': 0,
+                    'true': 0,
+                    'q': 0,
+                    'w': 0,
+                    'e': 0,
+                    'r': 0,
+                    'other': 0,
+                    'takedowns': 0,
+                    'other_names': [],
+                }
+        
+        for champ in team_200_participants:
+            overview_data[champ] = {
+                'as_killer': {},
+                'as_victim': {},
+            }
+            overview_data[champ]['as_killer']['aggregate'] = {
+                'total': 0,
+                'physical': 0,
+                'magic': 0,
+                'true': 0,
+                'q': 0,
+                'w': 0,
+                'e': 0,
+                'r': 0,
+                'other': 0,
+                'takedowns': 0,
+                'other_names': [],
+            }
+
+            for opponent in team_100_participants:
+                overview_data[champ]['as_killer'][opponent] = {
+                    'total': 0,
+                    'physical': 0,
+                    'magic': 0,
+                    'true': 0,
+                    'q': 0,
+                    'w': 0,
+                    'e': 0,
+                    'r': 0,
+                    'other': 0,
+                    'takedowns': 0,
+                    'other_names': [],
+                }
+                overview_data[champ]['as_victim'][opponent] = {
+                    'total': 0,
+                    'physical': 0,
+                    'magic': 0,
+                    'true': 0,
+                    'q': 0,
+                    'w': 0,
+                    'e': 0,
+                    'r': 0,
+                    'other': 0,
+                    'takedowns': 0,
+                    'other_names': [],
+                }
+        
+        return overview_data
+    
 DeathData().create("NA1_4763963000")
