@@ -1,6 +1,9 @@
 var all_death_data = undefined;
 var aggregate_placeholder = undefined;
 var damage_breakdown = "spell";
+var start = 0
+var end = -1
+var game_end_time = -1
 
 // set the dimensions and margins of the graph
 var margin = {top: 150, right: 100, bottom: 20, left: 100},
@@ -169,6 +172,8 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
     if(provided_data){
         all_death_data = newdata["all_deaths"];
         aggregate_placeholder = newdata["aggregate_placeholder"];
+        game_end_time = newdata["meta_data"]["end_time"]
+        end = game_end_time
     }
     if(all_death_data == undefined){
         return;
@@ -180,8 +185,6 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         pos_map[key] = i % 5;
         team_map[key] = i < 5 ? 0 : 1;
     });
-
-    console.log(provided_data);
 
     d3.selectAll("svg").remove();
     // append the svg object to the body of the page
@@ -222,11 +225,9 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         keys = ["aa", "q", "w", "e", "r", "other"];
     }
     
-    
     data = aggregate_death_data(start_time, end_time);
     
     data = prepare_data(data, focus);
-    console.log(data);
     data_red = data.slice(0,5);
     data_blue = data.slice(5);
 
@@ -267,7 +268,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         .attr('height', Math.min(80,height/8))
         .attr("xlink:href", document.getElementById("overview.png").getAttribute("data-img-url"))
         .attr("y", 2)
-        .on("click", function(d) {return reload("overview");})
+        .on("click", function(d) {return reload("overview", false, undefined, start_time, end_time);})
         .style('cursor', 'pointer');
 
         svg.append("g").append("text")
@@ -323,7 +324,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         .attr("xlink:href", function(d) {
             return document.getElementById(d.name+".jpg").getAttribute("data-img-url");
         })
-        .on("click", function(d) {return reload(d.name);})
+        .on("click", function(d) {return reload(d.name, false, undefined, start_time, end_time);})
         .style('cursor', 'pointer');
 
     g.selectAll(".bar")
@@ -342,7 +343,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
             } else {
                 damage_breakdown = "spell";
             }
-            return reload(focus);
+            return reload(focus, false, undefined, start_time, end_time);
         })
         .append("svg:title")
         .text(function(d) {
@@ -394,7 +395,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         .attr('height', Math.min(80,height/10))
         .attr("xlink:href", function(d) {return document.getElementById(d.name+".jpg").getAttribute("data-img-url");})
         .attr("transform", "translate("+(width+100)+",0)")
-        .on("click", function(d) {return reload(d.name);})
+        .on("click", function(d) {return reload(d.name, false, undefined, start_time, end_time);})
         .style('cursor', 'pointer');
 
         
@@ -415,7 +416,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
             } else {
                 damage_breakdown = "spell";
             }
-            return reload(focus);
+            return reload(focus, false, undefined, start_time, end_time);
         })
         .append("svg:title")
         .text(function(d) {
@@ -427,14 +428,11 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         });
     
     // TIMELINE
-    var tx = margin.left * 2,
+    var tx = margin.left,
         ty = margin.top + height*.75;
 
-    var tscalex = d3.scaleLinear().range([0, width]);
-    var txdomain=[0, d3.max(all_death_data, function(d) {
-        return d.timestamp;
-    })];
-    tscalex.domain(txdomain);
+    var tscalex = d3.scaleLinear().range([0, width]).domain([0, game_end_time]);
+
     var tscalez = d3.scaleOrdinal().range(["blue", "red"]).domain([0,1]);
     var tscaley = d3.scaleLinear()
         .range([0, 100])
@@ -478,8 +476,63 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         .attr("x1", tx)
         .attr("y1", ty+80)
         .attr("x2", tx + width)
-        .attr("y2", ty+80)
+        .attr("y2", ty+80);
+    
+    timeline
+        .append("line")
+        .attr("class", "leftbar")
+        .style("stroke", "black")
+        .style("stroke-width", 4)
+        .attr("x1", tx - 2 + tscalex(start))
+        .attr("y1", ty-10)
+        .attr("x2", tx - 2 + tscalex(start))
+        .attr("y2", ty+110)
+        .style('cursor', 'pointer');
+    var startDragHandler = d3.drag()
+        .on("drag", function () {
+            if(d3.event.x < tx || d3.event.x > tx + width || d3.event.x > (tx + tscalex(end) - 10)){
+                return;
+            }
 
+            d3.select(this)
+                .attr("x1", d3.event.x)
+                .attr("x2", d3.event.x);
+            
+            start = tscalex.invert(d3.event.x - tx);
+        })
+        .on("end", function(d) {
+            return reload(focus, false, undefined, start, end);
+        });
+    startDragHandler(svg.selectAll(".leftbar"));
+
+    timeline
+    .append("line")
+    .attr("class", "rightbar")
+    .style("stroke", "black")
+    .style("stroke-width", 4)
+    .attr("x1", tx + 2 + tscalex(end))
+    .attr("y1", ty-10)
+    .attr("x2", tx + 2 + tscalex(end))
+    .attr("y2", ty+110)
+    .style('cursor', 'pointer')
+    .style("fill", "black");
+    var endDragHandler = d3.drag()
+        .on("drag", function () {
+            if(d3.event.x < tx || d3.event.x > tx + width || d3.event.x < (tx + tscalex(start) + 10)){
+                return;
+            }
+
+            d3.select(this)
+                .attr("x1", d3.event.x)
+                .attr("x2", d3.event.x);
+            
+            end = tscalex.invert(d3.event.x - tx);
+        })
+        .on("end", function(d) {
+            return reload(focus, false, undefined, start, end);
+        });
+    endDragHandler(svg.selectAll(".rightbar"));
+    
     timeline.selectAll(".deaths")
         .data(all_death_data)
         .enter()
@@ -495,32 +548,53 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
             return tscalez(team_map[d.who]);
         })
         .on("click", function(d){
-            console.log("HERE " + d.timestamp);
-            return reload(focus, start_time=d.timestamp, end_time=d.timestamp);
+            if(d.timestamp == start_time && d.timestamp == end_time){
+                start = 0;
+                end = game_end_time;
+                return reload(focus);
+            }
+
+            start = d.timestamp;
+            end = d.timestamp;
+            return reload(focus, false, undefined, d.timestamp, d.timestamp);
         })
-        .style('cursor', 'pointer');
+        .style('cursor', 'pointer')
+        .append("svg:title")
+        .text(function(d) {
+            return d.who + " ... killed by ... " + d.killers.map(killer => " " + killer.who).toString(); 
+        });
 
-    // timeline.selectAll(".bar")
-    //     .data(data)
-    //     .enter().append("g")
-    //     .attr("fill", function(d) { return z(d.key);})
-    //     .selectAll("rect").data(function(d) { return d; })
-    //     .enter().append("rect")
-    //     .attr("x", function(d,i) { return x(d[0]); })
-    //     .attr("y", function(d) { return y(d.data.name); })
-    //     .attr("transform", "scale(-1, 1) translate(-"+width+", 0)")
-    //     .attr("width", function(d) { return x(d[1] - d[0]); })
-    //     .attr("height", Math.min(80,height/10))
-    //     .on("click", function(d) {
-    //         if(damage_breakdown == "spell"){
-    //             damage_breakdown = "type";
-    //         } else {
-    //             damage_breakdown = "spell";
-    //         }
-    //         return reload(focus);
-    //     })
+        var marker_time = 300000;
+        var intervals = [];
+        while(marker_time < game_end_time){
+            intervals.push({
+                "x": tx + tscalex(marker_time),
+                "y": ty + 100
+            });
+            marker_time += 300000;
+        }
+        console.log(intervals);
 
-
+        timeline.selectAll("gametimeticks")
+            .data(intervals)
+            .enter()
+            .append("line")
+            .attr("x1", function(d){
+                return d["x"];
+            })
+            .attr("y1", function(d){
+                return d["y"];
+            })
+            .attr("x2", function(d){
+                return d["x"];
+            })
+            .attr("y2", function(d){
+                return d["y"] + 10;
+            })
+            .style("stroke", "white")
+            .style("stroke-width", 2);
+    
+    
 }
 
 var BrowserText = (function () {

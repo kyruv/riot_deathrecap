@@ -1007,9 +1007,10 @@ class DeathData:
         
 
     def create(self, gameid):
-        death_data, champ_map = self.only_important_data(self.get_match_data(gameid))
+        death_data, meta_data, champ_map = self.only_important_data(self.get_match_data(gameid))
         response = {
             "all_deaths": death_data,
+            "meta_data": meta_data,
             "aggregate_placeholder": self.make_aggregate_data_holder(champ_map),
         }
         return response
@@ -1017,6 +1018,7 @@ class DeathData:
     def only_important_data(self, responses):
         detail_response = responses[0]
         overview_response = responses[1]
+        meta_data = {}
 
         id_map = {}
         champ_map = {}
@@ -1031,6 +1033,9 @@ class DeathData:
         
         for f in detail_response["info"]["frames"]:
             for event in f["events"]:
+                if event["type"] == "GAME_END":
+                    meta_data["end_time"] = event["timestamp"]
+
                 if event["type"] == "CHAMPION_KILL":
 
                     killers = {}
@@ -1079,7 +1084,7 @@ class DeathData:
                         "killers": list(killers.values()),
                     })
         
-        return deaths, champ_map
+        return deaths, meta_data, champ_map
 
     def get_match_data(self, match):
         detailed_request = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match}/timeline"
