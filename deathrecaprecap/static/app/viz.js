@@ -173,6 +173,7 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
         all_death_data = newdata["all_deaths"];
         aggregate_placeholder = newdata["aggregate_placeholder"];
         game_end_time = newdata["meta_data"]["end_time"]
+        start = 0
         end = game_end_time
     }
     if(all_death_data == undefined){
