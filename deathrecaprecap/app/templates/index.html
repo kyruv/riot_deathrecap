@@ -21,9 +21,9 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <div id="static-image-container">
-    <div hidden id="overview.png" data-img-url="{% static 'app/overview.png' %}"></div>
+    <div hidden id="overview.png" data-img-url="{% static 'overview.png' %}"></div>
     {% for image_name in image_names %}
-        <div hidden id="{{image_name}}" data-img-url="{% static 'app/champ_images/'|add:image_name %}"></div>
+        <div hidden id="{{image_name}}" data-img-url="{% static 'champ_images/'|add:image_name %}"></div>
     {% endfor %}
 </div>
 
@@ -37,7 +37,7 @@
     <input type="submit" value="Submit">
 </form>
 
-<script src="{% static 'app/viz.js' %}"></script>
+<script src="{% static 'viz.js' %}"></script>
 <script>
     var newdata = "{{ data|safe }}";
     if(newdata.length > 0){
