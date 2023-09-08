@@ -1,4 +1,5 @@
 import requests
+from django.conf import settings
 
 class DeathData:
     
@@ -1003,7 +1004,7 @@ class DeathData:
   }
 
     def __init__(self):
-        self.api_key = "RGAPI-cba6a232-691d-4e44-ac6a-590f1f38ff9e"
+        self.api_key = settings.RIOT_API_KEY
         
 
     def create(self, gameid):
