@@ -93,7 +93,7 @@ function aggregate_death_data(start, end){
         if(death.timestamp < start || death.timestamp > end){
             return;
         }
-
+        
         var victim = death["who"];
         
         death["killers"].forEach(killer_info => {
@@ -168,13 +168,13 @@ function aggregate_death_data(start, end){
 }
 
 
-function reload(focus, provided_data=false, newdata=undefined, start_time=0, end_time=1000000){
+function reload(focus, provided_data=false, newdata=undefined, start_time=0, end_time=100000000){
     if(provided_data){
         all_death_data = newdata["all_deaths"];
         aggregate_placeholder = newdata["aggregate_placeholder"];
-        game_end_time = newdata["meta_data"]["end_time"]
-        start = 0
-        end = game_end_time
+        game_end_time = newdata["meta_data"]["end_time"];
+        start = 0;
+        end = game_end_time;
     }
     if(all_death_data == undefined){
         return;
@@ -574,7 +574,6 @@ function reload(focus, provided_data=false, newdata=undefined, start_time=0, end
             });
             marker_time += 300000;
         }
-        console.log(intervals);
 
         timeline.selectAll("gametimeticks")
             .data(intervals)
