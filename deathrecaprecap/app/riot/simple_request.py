@@ -918,6 +918,7 @@ class DeathData:
       "warwickr": "r"
     },
     "xayah": {
+      "xayahpassive": "aa",
       "xayahq": "q",
       "xayahw": "w",
       "xayahe": "e",
