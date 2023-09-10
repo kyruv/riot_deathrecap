@@ -1042,7 +1042,40 @@ class DeathData:
 
                     killers = {}
                     for ds in event["victimDamageReceived"]:
-                        if ds["name"] not in champ_map:
+                        if ds["type"] == "TOWER" or ds["type"] == "MINION" or ds["type"] == "MONSTER":
+                            id = "NPC" + ("100" if champ_map[id_map[event["victimId"]]]["team"] == 200 else "200")
+                            if id not in killers:
+                                killers[id] = {
+                                    "who": id,
+                                    "physical": 0,
+                                    "magic": 0,
+                                    "true": 0,
+                                    "aa": 0,
+                                    "q": 0,
+                                    "w": 0,
+                                    "e": 0,
+                                    "r": 0,
+                                    "other": 0,
+                                    "other_names": [],
+                                }
+                            
+                            killers[id]["physical"] += ds["physicalDamage"]
+                            killers[id]["magic"] += ds["magicDamage"]
+                            killers[id]["true"] += ds["trueDamage"]
+
+                            if ds["type"] == "TOWER":
+                                killers[id]["aa"] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
+                            
+                            if ds["type"] == "MINION":
+                                killers[id]["q"] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
+
+                            if ds["type"] == "MONSTER":
+                                killers[id]["w"] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
+                            
+                            continue
+                            
+
+                        elif ds["name"] not in champ_map:
                             continue
 
                         if ds["name"] not in killers:
@@ -1109,7 +1142,9 @@ class DeathData:
                 team_100_participants.append(name)
             else:
                 team_200_participants.append(name)
-        
+        team_100_participants.append("NPC100")
+        team_200_participants.append("NPC200")
+
         for champ in team_100_participants:
             overview_data[champ] = {
                 'as_killer': {},
@@ -1211,5 +1246,3 @@ class DeathData:
                 }
         
         return overview_data
-    
-DeathData().create("NA1_4763963000")

@@ -4,10 +4,16 @@
 
 <style>
     html {
-        background-color: rgb(86, 86, 87);
+        background-color: rgb(53, 54, 58);
+        color: rgb(255, 255, 255);
+        font-family: Helvetica;
     }
+
     svg {
-        background-color: rgb(86, 86, 87);
+        background-color: rgb(53, 54, 58);
+        color: rgb(255, 255, 255);
+        stroke-width: 0;
+        fill: rgb(255, 255, 255);
     }
 
     #my_dataviz {
@@ -23,7 +29,7 @@
 <div id="static-image-container">
     <div hidden id="overview.png" data-img-url="{% static 'overview.png' %}"></div>
     {% for image_name in image_names %}
-        <div hidden id="{{image_name}}" data-img-url="{% static 'champ_images/'|add:image_name %}"></div>
+    <div hidden id="{{image_name}}" data-img-url="{% static 'champ_images/'|add:image_name %}"></div>
     {% endfor %}
 </div>
 
@@ -40,7 +46,7 @@
 <script src="{% static 'viz.js' %}"></script>
 <script>
     var newdata = "{{ data|safe }}";
-    if(newdata.length > 0){
+    if (newdata.length > 0) {
         var doublequoted = newdata.replace(/'/g, '"');
         console.log(JSON.parse(doublequoted));
         reload("overview", true, JSON.parse(doublequoted));
