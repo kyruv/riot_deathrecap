@@ -650,10 +650,15 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
             return reload(focus, false, undefined, d.timestamp, d.timestamp);
         })
         .style('cursor', 'pointer')
-        .append("svg:title")
-        .text(function (d) {
-            return d.who + " ... killed by ... " + d.killers.map(killer => " " + killer.who).toString();
-        });
+        .on("mouseover", function (d) {
+            return tooltip.style("visibility", "visible")
+                .style("font-size", "12px")
+                .text(d.who + " ... killed by ... " + d.killers.map(killer => " " + killer.who).toString());
+        })
+        .on("mousemove", function () {
+            return tooltip.style("left", (d3.event.x + 20) + "px").style("top", (d3.event.y - 20) + "px")
+        })
+        .on("mouseout", function (event) { return tooltip.style("visibility", "hidden").style("font-size", "18px"); });
 
     var marker_time = 300000;
     var intervals = [];
