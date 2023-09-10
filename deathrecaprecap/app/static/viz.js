@@ -270,7 +270,15 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
             .attr("y", 2);
         title
             .append("text")
-            .text(focus)
+            .text(function () {
+                if (focus == "NPC200") {
+                    return "Red NPCs";
+                }
+                if (focus == "NPC100") {
+                    return "Blue NPCs";
+                }
+                return focus;
+            })
             .style("font-size", "50px")
             .attr("x", Math.min(90, height / 6) + 5)
             .attr("y", 72);
@@ -360,7 +368,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
         })
         .on("mouseover", function (d) {
             var label = "" + d3.select(this.parentNode).datum().key;
-            if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200") {
+            if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200" || focus == "NPC100" || focus == "NPC200") {
                 if (label == "aa") {
                     label = "Turret";
                 }
@@ -450,7 +458,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
         })
         .on("mouseover", function (d) {
             var label = "" + d3.select(this.parentNode).datum().key;
-            if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200") {
+            if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200" || focus == "NPC100" || focus == "NPC200") {
                 if (label == "aa") {
                     label = "Turret";
                 }
