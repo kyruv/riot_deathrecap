@@ -167,27 +167,13 @@ function aggregate_death_data(start, end) {
 }
 
 
-function reload(focus, provided_data = false, newdata = undefined, start_time = 0, end_time = 1000000) {
-
-    window.addEventListener('resize', function (e) {
-        clearTimeout(window.resizeDelay);
-        window.resizeDelay = setTimeout(function () {
-            margin = { top: 150, right: 100, bottom: 20, left: 100 };
-            width = $(window).width() - 50 - margin.left - margin.right;
-            height = Math.max(750, $(window).height() - 50) - margin.top - margin.bottom;
-
-            console.log("resize");
-
-            reload(focus, false, undefined, start_time, end_time);
-        }, 150);
-
-    }, true);
-
+function reload(focus, provided_data = false, newdata = undefined, start_time = 0, end_time = 100000000) {
     if (provided_data) {
         all_death_data = newdata["all_deaths"];
         aggregate_placeholder = newdata["aggregate_placeholder"];
-        game_end_time = newdata["meta_data"]["end_time"]
-        end = game_end_time
+        game_end_time = newdata["meta_data"]["end_time"];
+        start = 0;
+        end = game_end_time;
     }
     if (all_death_data == undefined) {
         return;
@@ -656,16 +642,11 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
             return reload(focus, false, undefined, d.timestamp, d.timestamp);
         })
         .style('cursor', 'pointer')
-        .on("mouseover", function (d) {
-            var label = d.who + " ... killed by ... " + d.killers.map(killer => " " + killer.who).toString();
-            return tooltip.style("visibility", "visible")
-                .style("font-size", "12px")
-                .text(label);
-        })
-        .on("mousemove", function () {
-            return tooltip.style("left", (d3.event.x + 20) + "px").style("top", (d3.event.y - 20) + "px")
-        })
-        .on("mouseout", function (event) { return tooltip.style("visibility", "hidden").style("font-size", "18px"); });
+        .append("svg:title")
+        .text(function (d) {
+            return d.who + " ... killed by ... " + d.killers.map(killer => " " + killer.who).toString();
+        });
+
     var marker_time = 300000;
     var intervals = [];
     while (marker_time < game_end_time) {
@@ -675,6 +656,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
         });
         marker_time += 300000;
     }
+    console.log(intervals);
 
     timeline.selectAll("gametimeticks")
         .data(intervals)
