@@ -1,3 +1,5 @@
+resizeTimeout = false;
+
 function loadNewMatch(new_data) {
     persisted_data = {
         all_death_data: new_data["all_deaths"],
@@ -18,26 +20,34 @@ function loadNewMatch(new_data) {
 }
 
 function reload(persisted_data) {
+    // Stick the resize callback here so it has access to the most recent persisted_data
+    $(window).resize(function () {
+        if (resizeTimeout !== false) {
+            clearTimeout(resizeTimeout);
+        }
+        resizeTimeout = setTimeout(function () {
+            persisted_data["dimensions"] = {
+                margin: { top: 150, right: 100, bottom: 20, left: 100 },
+                width: Math.max(500, $(window).width() - 300),
+                height: Math.max(700, $(window).height() - 170),
+            };
+            reload(persisted_data);
+        }, 150);
+    });
+
+
     // Extract variables from persisted_data for easier use
     var all_death_data = persisted_data["all_death_data"];
     var aggregate_placeholder = persisted_data["aggregate_placeholder"];
-    var focus = persisted_data["focus"]
-    var damage_breakdown = persisted_data["damage_breakdown"];
-    var start = persisted_data["start"]
-    var end = persisted_data["end"]
-    var game_end_time = persisted_data["game_end_time"]
-    var margin = persisted_data["dimensions"]["margin"]
-    var width = persisted_data["dimensions"]["width"]
-    var height = persisted_data["dimensions"]["height"]
+    var focus = persisted_data["focus"];
+    var start = persisted_data["start"];
+    var end = persisted_data["end"];
+    var margin = persisted_data["dimensions"]["margin"];
+    var width = persisted_data["dimensions"]["width"];
+    var height = persisted_data["dimensions"]["height"];
 
     // Other extra variables
     var foreground_color = "white";
-    var pos_map = {};
-    var team_map = {}
-    Object.keys(aggregate_placeholder).forEach(function (key, i) {
-        pos_map[key] = i % 6;
-        team_map[key] = i < 6 ? 0 : 1;
-    });
 
     // ---- Data Preparation ----
     var data = aggregate_death_data(all_death_data, aggregate_placeholder, start, end);
@@ -79,46 +89,64 @@ function reload(persisted_data) {
         .attr("y2", .75 * height + margin.top - margin.bottom);
 
     // 4. Draw the header
-    d3_drawHeader(svg, focus, foreground_color, width, height);
+    d3_drawHeader(svg, focus, foreground_color, persisted_data);
 
     // 5. Setup where we will primarily draw the data
     var g = svg.append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // 6. Draw the blue team data
-    data_blue = draw_data.slice(0, 6);
-    d3_drawDeathBars(data_blue, g, tooltip, persisted_data, is_left = true);
+    // 6. setup the shared domain for the bars
+    var xdomain = [0, d3.max(draw_data, function (d) {
+        return d.total;
+    })];
 
-    // 7. Draw the red team data
-    data_red = draw_data.slice(6);
-    d3_drawDeathBars(data_red, g, tooltip, persisted_data, is_left = false);
+    // 7. Draw the blue team data
+    data_blue = draw_data.slice(6);
+    d3_drawDeathBars(data_blue, g, tooltip, persisted_data, xdomain, is_left = true);
 
-    // 8. Draw the timeline
-    d3_drawTimeline(svg, persisted_data);
+    // 8. Draw the red team data
+    data_red = draw_data.slice(0, 6);
+    d3_drawDeathBars(data_red, g, tooltip, persisted_data, xdomain, is_left = false);
+
+    // 9. Draw the timeline
+    d3_drawTimeline(svg, foreground_color, tooltip, persisted_data);
 }
+
+
+
+
 
 // ---------------------------------------------------
 // --------- D3.js logic helper functions ------------
 // ---------------------------------------------------
 
-function d3_drawDeathBars(death_data, g, tooltip, persisted_data, is_left) {
+function d3_drawDeathBars(death_data, g, tooltip, persisted_data, xdomain, is_left) {
     var height = persisted_data["dimensions"]["height"];
     var damage_breakdown = persisted_data["damage_breakdown"];
+    var focus = persisted_data["focus"];
+    var damage_breakdown = persisted_data["damage_breakdown"];
+    var width = persisted_data["dimensions"]["width"];
 
-    var x = d3.scaleLinear().range([0, width / 2 - 5]);
-    var y = d3.scaleBand().range([.8 * height, 0]).paddingInner(0.05).align(0.1);
-    var death_color; // depends on damage_breakdown, set below    
+    var x = d3.scaleLinear()
+        .range([0, width / 2 - 5])
+        .domain(xdomain);
+    var y = d3.scaleBand()
+        .range([.8 * height, 0])
+        .domain(death_data.map(function (d, i) { return d.name; }))
+        .paddingInner(0.05)
+        .align(0.1);
+    var z; // depends on damage_breakdown, set below    
     var keys = [];
     if (damage_breakdown == "type") {
-        death_color = d3.scaleOrdinal()
+        z = d3.scaleOrdinal()
             .range(["indianred", "royalblue", "gainsboro"]);
-        keys = ["physical", "magic", "true"]
+        keys = ["physical", "magic", "true"];
     } else if (damage_breakdown == "spell") {
-        death_color = d3.scaleOrdinal().range(["#d73027", "#fc8d59", "#fee090", "#e0f3f8", "#91bfdb", "#4575b4"]);
+        z = d3.scaleOrdinal().range(["#d73027", "#fc8d59", "#fee090", "#e0f3f8", "#91bfdb", "#4575b4"]);
         keys = ["aa", "q", "w", "e", "r", "other"];
     }
 
-    y.domain(death_data.map(function (d, i) { return d.name; }));
+    y;
     g.selectAll(".label")
         .data(death_data)
         .enter()
@@ -153,7 +181,7 @@ function d3_drawDeathBars(death_data, g, tooltip, persisted_data, is_left) {
             return "translate(" + (width - BrowserText.getWidth(label, 17)) + ", 0)";
         });
     g.selectAll(".images")
-        .data(data_blue)
+        .data(death_data)
         .enter()
         .append("svg:image")
         .attr("style", "outline: thin solid white;")
@@ -176,7 +204,7 @@ function d3_drawDeathBars(death_data, g, tooltip, persisted_data, is_left) {
         })
         .style('cursor', 'pointer');
     g.selectAll(".bar")
-        .data(d3.stack().keys(keys)(data_blue))
+        .data(d3.stack().keys(keys)(death_data))
         .enter().append("g")
         .attr("fill", function (d) { return z(d.key); })
         .selectAll("rect").data(function (d) { return d; })
@@ -225,7 +253,12 @@ function d3_drawDeathBars(death_data, g, tooltip, persisted_data, is_left) {
         .on("mouseout", function (event) { return tooltip.style("visibility", "hidden"); });
 }
 
-function d3_drawHeader(svg, focus, foreground_color, width, height) {
+function d3_drawHeader(svg, focus, foreground_color, persisted_data) {
+    var focus = persisted_data["focus"];
+    var width = persisted_data["dimensions"]["width"];
+    var height = persisted_data["dimensions"]["height"];
+    var margin = persisted_data["dimensions"]["margin"];
+
     if (focus == "overview") {
         var title = svg.append("g");
         title
@@ -295,8 +328,9 @@ function d3_drawHeader(svg, focus, foreground_color, width, height) {
     }
 }
 
-function d3_drawTimeline(svg, persisted_data) {
+function d3_drawTimeline(svg, foreground_color, tooltip, persisted_data) {
     var all_death_data = persisted_data["all_death_data"];
+    var aggregate_placeholder = persisted_data["aggregate_placeholder"];
     var start = persisted_data["start"]
     var end = persisted_data["end"]
     var game_end_time = persisted_data["game_end_time"]
@@ -313,6 +347,14 @@ function d3_drawTimeline(svg, persisted_data) {
     var tscaley = d3.scaleLinear()
         .range([0, 100])
         .domain([0, 5]);
+
+    var pos_map = {};
+    var team_map = {}
+    Object.keys(aggregate_placeholder).forEach(function (key, i) {
+        pos_map[key] = i % 6;
+        team_map[key] = i < 6 ? 0 : 1;
+    });
+
     var timeline = svg.append("g");
     timeline
         .append("rect")
@@ -494,7 +536,6 @@ function d3_drawTimeline(svg, persisted_data) {
         });
         marker_time += 300000;
     }
-    console.log(intervals);
 
     timeline.selectAll("gametimeticks")
         .data(intervals)
@@ -677,345 +718,6 @@ function prepare_data(data, focus) {
         return prepared_data.reverse();
     }
 };
-
-
-
-// var all_death_data = undefined;
-// var aggregate_placeholder = undefined;
-// var damage_breakdown = "type";
-// var start = 0
-// var end = -1
-// var game_end_time = -1
-// var foreground_color = "white";
-
-// // set the dimensions and margins of the graph
-// var margin = { top: 150, right: 100, bottom: 20, left: 100 },
-//     width = $(window).width() - 50 - margin.left - margin.right,
-//     height = $(window).height() - 50 - margin.top - margin.bottom;
-
-
-
-
-
-// function reload(focus, provided_data = false, newdata = undefined, start_time = 0, end_time = 100000000) {
-//     if (provided_data) {
-//         all_death_data = newdata["all_deaths"];
-//         aggregate_placeholder = newdata["aggregate_placeholder"];
-//         game_end_time = newdata["meta_data"]["end_time"];
-//         start = 0;
-//         end = game_end_time;
-//     }
-//     if (all_death_data == undefined) {
-//         return;
-//     }
-
-//     var pos_map = {};
-//     var team_map = {}
-//     Object.keys(aggregate_placeholder).forEach(function (key, i) {
-//         pos_map[key] = i % 5;
-//         team_map[key] = i < 5 ? 0 : 1;
-//     });
-
-//     d3.selectAll("svg").remove();
-//     d3.select("#tooltip").remove();
-//     // append the svg object to the body of the page
-//     var svg = d3.select("#my_dataviz")
-//         .append("svg")
-//         .attr("width", width + margin.left + margin.right)
-//         .attr("height", height + margin.top + margin.bottom)
-
-//     // create a tooltip
-//     var tooltip = d3.select("#my_dataviz")
-//         .append("div")
-//         .attr("id", "tooltip")
-//         .attr("style", "outline: thin solid white;")
-//         .style("position", "absolute")
-//         .style("background", "rgb(30, 32, 39)")
-//         .style("padding", "5px")
-//         .style("visibility", "hidden");
-
-//     svg.append('line')
-//         .style("stroke", foreground_color)
-//         .style("stroke-width", 5)
-//         .attr("x1", margin.left / 2)
-//         .attr("y1", 115)
-//         .attr("x2", width + 1.5 * margin.right)
-//         .attr("y2", 115)
-
-//     svg.append('line')
-//         .style("stroke", foreground_color)
-//         .style("stroke-width", 2)
-//         .attr("x1", margin.left + width / 2)
-//         .attr("y1", 115)
-//         .attr("x2", margin.left + width / 2)
-//         .attr("y2", .75 * height + margin.top - margin.bottom)
-
-
-//     var g = svg.append("g")
-//         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-//     var x = d3.scaleLinear().range([0, width / 2 - 5]),
-//         y = d3.scaleBand().range([.8 * height, 0]).paddingInner(0.05).align(0.1);
-//     var keys = [];
-//     if (damage_breakdown == "type") {
-//         z = d3.scaleOrdinal()
-//             .range(["indianred", "royalblue", "gainsboro"]);
-//         keys = ["physical", "magic", "true"]
-//     } else if (damage_breakdown == "spell") {
-//         z = d3.scaleOrdinal().range(["#d73027", "#fc8d59", "#fee090", "#e0f3f8", "#91bfdb", "#4575b4"]);
-//         keys = ["aa", "q", "w", "e", "r", "other"];
-//     }
-
-//     data = aggregate_death_data(start_time, end_time);
-
-//     data = prepare_data(data, focus);
-//     data_red = data.slice(0, 6);
-//     data_blue = data.slice(6);
-
-//     if (focus == "overview") {
-//         var title = svg.append("g");
-//         title
-//             .append("text")
-//             .text("Critical Damage Dealt Overview")
-//             .attr("color", foreground_color)
-//             .attr("text-anchor", "middle")
-//             .style("font-size", "50px")
-//             .attr("x", 125 + width / 2)
-//             .attr("y", 50);
-//         title
-//             .append("text")
-//             .text("aka damage that contributed to a kill")
-//             .attr("text-anchor", "middle")
-//             .style("font-size", "24px")
-//             .attr("x", 125 + width / 2)
-//             .attr("y", 80);
-//     }
-//     else {
-//         var title = svg.append("g");
-//         title.append("svg:image")
-//             .attr('width', Math.min(90, height / 6))
-//             .attr('height', Math.min(90, height / 6))
-//             .attr("style", "outline: thin solid white;")
-//             .attr("xlink:href", document.getElementById(focus + ".jpg").getAttribute("data-img-url"))
-//             .attr("y", 2);
-//         title
-//             .append("text")
-//             .text(function () {
-//                 if (focus == "NPC200") {
-//                     return "Red NPCs";
-//                 }
-//                 if (focus == "NPC100") {
-//                     return "Blue NPCs";
-//                 }
-//                 return focus;
-//             })
-//             .style("font-size", "50px")
-//             .attr("x", Math.min(90, height / 6) + 5)
-//             .attr("y", 72);
-//         title.attr("transform", "translate(" + (width / 2 + margin.left - (title.node().getBBox().width / 2)) + ",0)");
-
-//         svg.append("g").append("svg:image")
-//             .attr('width', Math.min(80, height / 8))
-//             .attr('height', Math.min(80, height / 8))
-//             .attr("xlink:href", document.getElementById("overview.png").getAttribute("data-img-url"))
-//             .attr("y", 2)
-//             .on("click", function (d) { return reload("overview", false, undefined, start_time, end_time); })
-//             .style('cursor', 'pointer');
-
-//         svg.append("g").append("text")
-//             .text("Champions I killed")
-//             .attr("text-anchor", "middle")
-//             .style("font-size", "28px")
-//             .attr("x", margin.left + BrowserText.getWidth("Champions I killed", 28) / 2)
-//             .attr("y", 105);
-
-//         svg.append("g").append("text")
-//             .text("Champions who killed me")
-//             .attr("text-anchor", "right")
-//             .style("font-size", "28px")
-//             .attr("x", width + margin.right - BrowserText.getWidth("Champions who killed me", 28))
-//             .attr("y", 105);
-//     }
-
-//     // share a scale for the x domain
-//     var xdomain = [0, d3.max(data, function (d) {
-//         return d.total;
-//     })];
-//     x.domain(xdomain);
-
-//     // draw the blue team data
-//     y.domain(data_blue.map(function (d, i) { return d.name; }));
-//     g.selectAll(".label")
-//         .data(data_blue)
-//         .enter()
-//         .append("text")
-//         .text(function (d) {
-//             var label = "";
-//             if (d.takedowns > 1) {
-//                 label = d.total.toLocaleString("en-US") + " (" + d.takedowns + " takedowns)";
-//             } else if (d.takedowns == 1) {
-//                 label = d.total.toLocaleString("en-US") + " (1 takedown)";
-//             } else {
-//                 label = d.total.toLocaleString("en-US") + " (0 takedowns)";
-//             }
-//             return label;
-//         })
-//         .attr("x", function (d, i) { return 0; })
-//         .attr("y", function (d) { return y(d.name) - 5; })
-//         .style("font-size", "17px");
-//     g.selectAll(".images")
-//         .data(data_blue)
-//         .enter()
-//         .append("svg:image")
-//         .attr("style", "outline: thin solid white;")
-//         .attr("x", function (d, i) { return x(0) - (Math.min(70, height / 11) + 10); })
-//         .attr("y", function (d) { return y(d.name); })
-//         .attr('width', Math.min(70, height / 11))
-//         .attr('height', Math.min(70, height / 11))
-//         .attr("xlink:href", function (d) {
-//             return document.getElementById(d.name + ".jpg").getAttribute("data-img-url");
-//         })
-//         .on("click", function (d) { return reload(d.name, false, undefined, start_time, end_time); })
-//         .style('cursor', 'pointer');
-
-//     g.selectAll(".bar")
-//         .data(d3.stack().keys(keys)(data_blue))
-//         .enter().append("g")
-//         .attr("fill", function (d) { return z(d.key); })
-//         .selectAll("rect").data(function (d) { return d; })
-//         .enter().append("rect")
-//         .attr("x", function (d, i) { return x(d[0]); })
-//         .attr("y", function (d) { return y(d.data.name); })
-//         .attr("width", function (d) { return x(d[1] - d[0]); })
-//         .attr("height", Math.min(70, height / 11))
-//         .on("click", function (d) {
-//             if (damage_breakdown == "spell") {
-//                 damage_breakdown = "type";
-//             } else {
-//                 damage_breakdown = "spell";
-//             }
-//             return reload(focus, false, undefined, start_time, end_time);
-//         })
-//         .on("mouseover", function (d) {
-//             var label = "" + d3.select(this.parentNode).datum().key;
-//             if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200" || focus == "NPC100" || focus == "NPC200") {
-//                 if (label == "aa") {
-//                     label = "Turret";
-//                 }
-//                 if (label == "q") {
-//                     label = "Minion";
-//                 }
-//                 if (label == "w") {
-//                     label = "Monster";
-//                 }
-//             }
-//             if (label == "other") {
-//                 label += " (" + d.data.other_names + ")";
-//             }
-//             label = (d[1] - d[0]).toLocaleString("en-US") + " " + label;
-//             return tooltip.style("visibility", "visible")
-//                 .text(label);
-//         })
-//         .on("mousemove", function () {
-//             return tooltip.style("left", (d3.event.x + 20) + "px").style("top", (d3.event.y - 20) + "px")
-//         })
-//         .on("mouseout", function (event) { return tooltip.style("visibility", "hidden"); });
-
-//     // draw the red team data
-//     y.domain(data_red.map(function (d, i) { return d.name; }));
-//     g.selectAll(".label")
-//         .data(data_red)
-//         .enter()
-//         .append("text")
-//         .text(function (d) {
-//             var label = "";
-//             if (d.takedowns > 1) {
-//                 label = d.total.toLocaleString("en-US") + " (" + d.takedowns + " takedowns)";
-//             } else if (d.takedowns == 1) {
-//                 label = d.total.toLocaleString("en-US") + " (1 takedown)";
-//             } else {
-//                 label = d.total.toLocaleString("en-US") + " (0 takedowns)";
-//             }
-//             return label;
-//         })
-//         .attr("x", function (d, i) { return 0; })
-//         .attr("y", function (d) { return y(d.name) - 5; })
-//         .style("font-size", "17px")
-//         .attr("transform", function (d) {
-//             var label = "";
-//             if (d.takedowns > 1) {
-//                 label = d.total.toLocaleString("en-US") + " (" + d.takedowns + " takedowns)";
-//             } else if (d.takedowns == 1) {
-//                 label = d.total.toLocaleString("en-US") + " (1 takedown)";
-//             } else {
-//                 label = d.total.toLocaleString("en-US") + " (0 takedowns)";
-//             }
-//             return "translate(" + (width - BrowserText.getWidth(label, 17)) + ", 0)";
-//         });
-//     g.selectAll(".images_red")
-//         .data(data_red)
-//         .enter()
-//         .append("svg:image")
-//         .attr("style", "outline: thin solid white;")
-//         .attr("x", function (d, i) { return x(0) - 90; })
-//         .attr("y", function (d) { return y(d.name); })
-//         .attr('width', Math.min(70, height / 11))
-//         .attr('height', Math.min(70, height / 11))
-//         .attr("xlink:href", function (d) { return document.getElementById(d.name + ".jpg").getAttribute("data-img-url"); })
-//         .attr("transform", "translate(" + (width + 100) + ",0)")
-//         .on("click", function (d) { return reload(d.name, false, undefined, start_time, end_time); })
-//         .style('cursor', 'pointer');
-
-
-//     g.selectAll(".bar")
-//         .data(d3.stack().keys(keys)(data_red))
-//         .enter().append("g")
-//         .attr("fill", function (d) { return z(d.key); })
-//         .selectAll("rect").data(function (d) { return d; })
-//         .enter().append("rect")
-//         .attr("x", function (d, i) { return x(d[0]); })
-//         .attr("y", function (d) { return y(d.data.name); })
-//         .attr("transform", "scale(-1, 1) translate(-" + width + ", 0)")
-//         .attr("width", function (d) { return x(d[1] - d[0]); })
-//         .attr("height", Math.min(70, height / 11))
-//         .on("click", function (d) {
-//             if (damage_breakdown == "spell") {
-//                 damage_breakdown = "type";
-//             } else {
-//                 damage_breakdown = "spell";
-//             }
-//             return reload(focus, false, undefined, start_time, end_time);
-//         })
-//         .on("mouseover", function (d) {
-//             var label = "" + d3.select(this.parentNode).datum().key;
-//             if (d.data["name"] == "NPC100" || d.data["name"] == "NPC200" || focus == "NPC100" || focus == "NPC200") {
-//                 if (label == "aa") {
-//                     label = "Turret";
-//                 }
-//                 if (label == "q") {
-//                     label = "Minion";
-//                 }
-//                 if (label == "w") {
-//                     label = "Monster";
-//                 }
-//             }
-
-//             if (label == "other") {
-//                 label += " (" + d.data.other_names + ")";
-//             }
-//             label = (d[1] - d[0]).toLocaleString("en-US") + " " + label;
-//             return tooltip.style("visibility", "visible")
-//                 .text(label);
-//         })
-//         .on("mousemove", function () {
-//             return tooltip.style("left", (d3.event.x + 20) + "px").style("top", (d3.event.y - 20) + "px")
-//         })
-//         .on("mouseout", function (event) { return tooltip.style("visibility", "hidden"); });
-
-// }
-
-
-
 
 // ---------------------------------------------------
 // ---------- Formatting Helper Functions ------------
