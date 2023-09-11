@@ -1,5 +1,7 @@
 # riot_deathrecap
 
+https://relyk3.pythonanywhere.com/
+
 This is a for-fun project using the riot games api to visualize damage done that contributed to deaths.
 
 1. Get the match id from https://www.leagueofgraphs.com/match/na/4764831104 searching up your recent games. Copy paste it from the end of the URL, formatting like NA1_4764831104. Hit submit. Alternatively hit copy match id button from the post game lobby.
