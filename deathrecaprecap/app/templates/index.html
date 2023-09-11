@@ -48,7 +48,6 @@
     var newdata = "{{ data|safe }}";
     if (newdata.length > 0) {
         var doublequoted = newdata.replace(/'/g, '"');
-        console.log(JSON.parse(doublequoted));
-        reload("overview", true, JSON.parse(doublequoted));
+        loadNewMatch(JSON.parse(doublequoted));
     }
 </script>
