@@ -266,7 +266,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
             .attr('width', Math.min(90, height / 6))
             .attr('height', Math.min(90, height / 6))
             .attr("style", "outline: thin solid white;")
-            .attr("xlink:href", document.getElementById(focus + ".jpg").getAttribute("data-img-url"))
+            .attr("xlink:href", document.getElementById(focus + ".png").getAttribute("data-img-url"))
             .attr("y", 2);
         title
             .append("text")
@@ -343,7 +343,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
         .attr('width', Math.min(70, height / 11))
         .attr('height', Math.min(70, height / 11))
         .attr("xlink:href", function (d) {
-            return document.getElementById(d.name + ".jpg").getAttribute("data-img-url");
+            return document.getElementById(d.name + ".png").getAttribute("data-img-url");
         })
         .on("click", function (d) { return reload(d.name, false, undefined, start_time, end_time); })
         .style('cursor', 'pointer');
@@ -431,7 +431,7 @@ function reload(focus, provided_data = false, newdata = undefined, start_time = 
         .attr("y", function (d) { return y(d.name); })
         .attr('width', Math.min(70, height / 11))
         .attr('height', Math.min(70, height / 11))
-        .attr("xlink:href", function (d) { return document.getElementById(d.name + ".jpg").getAttribute("data-img-url"); })
+        .attr("xlink:href", function (d) { return document.getElementById(d.name + ".png").getAttribute("data-img-url"); })
         .attr("transform", "translate(" + (width + 100) + ",0)")
         .on("click", function (d) { return reload(d.name, false, undefined, start_time, end_time); })
         .style('cursor', 'pointer');

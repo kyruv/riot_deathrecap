@@ -70,6 +70,7 @@ class DeathData:
       "apheliosr": "r"
     },
     "ashe": {
+      "ashecritattack": "aa",
       "asheq": "q",
       "volley": "w",
       "ashespiritofthehawk": "e",
@@ -116,6 +117,13 @@ class DeathData:
       "braumw": "w",
       "braume": "e",
       "braumrwrapper": "r"
+    },
+    "briar": {
+      "briarq": "q",
+      "briarw": "w",
+      "briarwattackspell": "w",
+      "briare": "e",
+      "briarr": "r"
     },
     "caitlyn": {
       "caitlynq": "q",
@@ -486,6 +494,7 @@ class DeathData:
       "milior": "r"
     },
     "missfortune": {
+      "missfortunecritattack": "aa",
       "missfortunericochetshot": "q",
       "missfortuneviciousstrikes": "w",
       "missfortunescattershot": "e",
@@ -937,6 +946,10 @@ class DeathData:
       "xinzhaor": "r"
     },
     "yasuo": {
+      "yasuocritattack": "aa",
+      "yasuocritattack2": "aa",
+      "yasuocritattack3": "aa",
+      "yasuocritattack4": "aa",
       "yasuoq1wrapper": "q",
       "yasuow": "w",
       "yasuoe": "e",
