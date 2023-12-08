@@ -275,6 +275,18 @@ class DeathData:
       "heimerdingere": "e",
       "heimerdingerr": "r"
     },
+    "hwei": {
+      "hweiqq": "q",
+      "hweiqe": "q",
+      "hweiqw": "q",
+      "hweiwq": "w",
+      "hweiww": "w",
+      "hweiwe": "w",
+      "hweieq": "e",
+      "hweiew": "e",
+      "hweiee": "e",
+      "hweir": "r",  
+    },
     "illaoi": {
       "illaoiq": "q",
       "illaoiw": "w",
