@@ -16,10 +16,55 @@ function loadNewMatch(new_data) {
         },
     };
 
+    persisted_data = getUrlParams(persisted_data);
+    updateUrlParams(persisted_data);
     reload(persisted_data);
 }
 
+function updateUrlParams(persisted_data) {
+    const url = new URL(location.href);
+    if (persisted_data["focus"] != undefined) {
+        url.searchParams.set("focus", persisted_data["focus"]);
+    }
+    if (persisted_data["damage_breakdown"] != undefined) {
+        url.searchParams.set("damage_breakdown", persisted_data["damage_breakdown"]);
+    }
+    if (persisted_data["start"] != undefined) {
+        url.searchParams.set("start", persisted_data["start"]);
+    }
+    if (persisted_data["end"] != undefined) {
+        url.searchParams.set("end", persisted_data["end"]);
+    }
+
+    history.replaceState(null, '', url);
+}
+
+function getUrlParams(persisted_data) {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("focus")) {
+        persisted_data["focus"] = searchParams.get("focus");
+    }
+    if (searchParams.has("damage_breakdown")) {
+        persisted_data["damage_breakdown"] = searchParams.get("damage_breakdown");
+    }
+    if (searchParams.has("start")) {
+        persisted_data["start"] = Number(searchParams.get("start"));
+    }
+    if (searchParams.has("end")) {
+        persisted_data["end"] = Number(searchParams.get("end"));
+    }
+
+    if (persisted_data["end"] < persisted_data["start"]) {
+        persisted_data["end"] = persisted_data["game_end_time"];
+        persisted_data["start"] = 0;
+        updateUrlParams(persisted_data);
+    }
+    return persisted_data;
+}
+
 function reload(persisted_data) {
+    updateUrlParams(persisted_data);
+
     // Stick the resize callback here so it has access to the most recent persisted_data
     $(window).resize(function () {
         if (resizeTimeout !== false) {
@@ -35,6 +80,10 @@ function reload(persisted_data) {
         }, 150);
     });
 
+    window.addEventListener('popstate', function (event) {
+        persisted_data = getUrlParams(persisted_data);
+        reload(persisted_data);
+    });
 
     // Extract variables from persisted_data for easier use
     var all_death_data = persisted_data["all_death_data"];
@@ -420,7 +469,7 @@ function d3_drawTimeline(svg, foreground_color, tooltip, persisted_data) {
                 .attr("x1", d3.event.x)
                 .attr("x2", d3.event.x);
 
-            start = tscalex.invert(d3.event.x - tx);
+            start = Math.round(tscalex.invert(d3.event.x - tx));
 
             d3.select('.leftbarlabel')
                 .attr("x", d3.event.x - 22)
@@ -468,7 +517,7 @@ function d3_drawTimeline(svg, foreground_color, tooltip, persisted_data) {
                 .attr("x1", d3.event.x)
                 .attr("x2", d3.event.x);
 
-            end = tscalex.invert(d3.event.x - tx);
+            end = Math.round(tscalex.invert(d3.event.x - tx));
 
             d3.select('.rightbarlabel')
                 .attr("x", d3.event.x + 22)
