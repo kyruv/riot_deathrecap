@@ -112,10 +112,6 @@ function reload(persisted_data) {
     d3_drawTimeline(svg, foreground_color, tooltip, persisted_data);
 }
 
-
-
-
-
 // ---------------------------------------------------
 // --------- D3.js logic helper functions ------------
 // ---------------------------------------------------

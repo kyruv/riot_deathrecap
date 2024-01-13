@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+    html {
+        background-color: rgb(53, 54, 58);
+        color: rgb(255, 255, 255);
+        font-family: Helvetica;
+    }
+
+    ul {
+        list-style-type: none;
+    }
+</style>
+
+<div id="static-image-container">
+    <div hidden id="overview.png" data-img-url="{% static 'overview.png' %}"></div>
+    {% for image_name in image_names %}
+    <div hidden id="{{image_name}}" data-img-url="{% static 'champ_images/'|add:image_name %}"></div>
+    {% endfor %}
+</div>
+
+<body>
+    <form method="post" id="load_player_form" action="{% url 'process_player' %}">
+        {% csrf_token %}
+        <label for="playerid">Summoner Id:</label><br>
+        <input type="text" id="playerid" name="playerid" style="width: 100px" value=""><br>
+
+        <label for="playerid">Tag:</label><br>
+        <input type="text" id="tagid" name="tagid" style="width: 40px" value="NA1"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+
+    {% if recent_games %}
+    <ul>
+        {% for game in recent_games %}
+        <li>
+            <a href="/game/{{game.gameid}}/" target="_blank">
+                <img src="/static/champ_images/{{ game.champ }}.png" alt="{{ game.champ }} Image" width="100">
+            </a><br>
+            {{ game.queue }}<br>
+            {{ game.gameid }}<br>
+            {{ game.time|timesince }} ago<br>
+            <hr>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No recent games found.</p>
+    {% endif %}
+</body>

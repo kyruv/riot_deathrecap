@@ -80,7 +80,8 @@ class DeathData:
       "aurelionsolq": "q",
       "aurelionsolw": "w",
       "aurelionsole": "e",
-      "aurelionsolr": "r"
+      "aurelionsolr": "r",
+      "aurelionsolr2": "r"
     },
     "azir": {
       "azirqwrapper": "q",
@@ -168,6 +169,7 @@ class DeathData:
       "dianar": "r"
     },
     "draven": {
+      "dravencritattack": "aa",
       "dravenspinning": "q",
       "dravenfury": "w",
       "dravendoubleshot": "e",
@@ -435,6 +437,7 @@ class DeathData:
     },
     "leesin": {
       "blindmonkqone": "q",
+      "blindmonkqtwo": "q",
       "blindmonkwone": "w",
       "blindmonkeone": "e",
       "blindmonkrkick": "r"
@@ -657,6 +660,7 @@ class DeathData:
       "rellr": "r"
     },
     "renata": {
+      "renatapassive": "aa",
       "renataq": "q",
       "renataw": "w",
       "renatae": "e",
@@ -949,7 +953,8 @@ class DeathData:
       "xeratharcanopulsechargeup": "q",
       "xeratharcanebarrage2": "w",
       "xerathmagespear": "e",
-      "xerathlocusofpower2": "r"
+      "xerathlocusofpower2": "r",
+      "xerathrmissilewrapper": "r"
     },
     "xinzhao": {
       "xinzhaoq": "q",
@@ -1133,17 +1138,47 @@ class DeathData:
                                 if spell_name == "":
                                     spell_name = "<empty_spell_name>"
                                 killers[ds["name"]]["other_names"].append(spell_name)
-                    
-                    for key in killers:
-                        killers[key]["other_names"] = list(set(killers[key]["other_names"]))
 
+                    killers_to_attribute_to_renata = []
+                    for key in killers:
+                        if key.startswith('NPC'):
+                          continue
+                        
+                        killer_team = champ_map[key]["team"]
+
+                        if killer_team == champ_map[id_map[event["victimId"]]]["team"]:
+                            killers_to_attribute_to_renata.append(key)
+
+                    if len(killers_to_attribute_to_renata) > 0:
+                        for key in killers_to_attribute_to_renata:
+                          if "Renata" not in killers:
+                            killers["Renata"] = {
+                              "who": "Renata",
+                              "physical": 0,
+                              "magic": 0,
+                              "true": 0,
+                              "aa": 0,
+                              "q": 0,
+                              "w": 0,
+                              "e": 0,
+                              "r": 0,
+                              "other": 0,
+                              "other_names": [],
+                            }
+                          killers["Renata"]["physical"] += killers[key]["physical"]
+                          killers["Renata"]["magic"] += killers[key]["magic"]
+                          killers["Renata"]["true"] += killers[key]["true"]
+                          killers["Renata"]["r"] += (killers[key]["true"] + killers[key]["magic"] + killers[key]["physical"])
+                          del killers[key]
+                        
+                    for key in killers:
+                        killers[key]["other_names"] = list(set(killers[key]["other_names"]))    
 
                     deaths.append({
                         "timestamp": event["timestamp"],
                         "who": id_map[event["victimId"]],
                         "killers": list(killers.values()),
                     })
-        
         return deaths, meta_data, champ_map
 
     def get_match_data(self, match):
