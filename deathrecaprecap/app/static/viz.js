@@ -235,6 +235,9 @@ function d3_drawDeathBars(death_data, g, tooltip, persisted_data, xdomain, is_le
         .attr('width', Math.min(70, height / 11))
         .attr('height', Math.min(70, height / 11))
         .attr("xlink:href", function (d) {
+            if (document.getElementById(d.name + ".png") == undefined) {
+                return document.getElementById("default_champ.png").getAttribute("data-img-url")
+            }
             return document.getElementById(d.name + ".png").getAttribute("data-img-url");
         })
         .on("click", function (d) {

@@ -243,8 +243,11 @@ class DeathData:
     },
     "gnar": {
       "gnarq": "q",
+      "gnarbigq": "q",
       "gnarw": "w",
+      "gnarbigw": "w",
       "gnare": "e",
+      "gnarbige": "e",
       "gnarr": "r"
     },
     "gragas": {
@@ -768,6 +771,12 @@ class DeathData:
       "skarnerfracture": "e",
       "skarnerimpale": "r"
     },
+    "smolder": {
+      "smolderq": "q",
+      "smolderw": "w",
+      "smoldere": "e",
+      "smolderr": "r"
+    },
     "sona": {
       "sonaq": "q",
       "sonaw": "w",
@@ -1127,16 +1136,24 @@ class DeathData:
                         killers[ds["name"]]["magic"] += ds["magicDamage"]
                         killers[ds["name"]]["true"] += ds["trueDamage"]
 
-                        if "basicattack" in ds["spellName"].lower() or ds["spellName"].lower() in DeathData.special_aa_mapping:
+                        if "basicattack" in ds["spellName"].lower() or "critattack" in ds["spellName"].lower() or ds["spellName"].lower() in DeathData.special_aa_mapping:
                             killers[ds["name"]]["aa"] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
                         else:
-                            spell_type = DeathData.spell_mapping[ds["name"].lower()].get(ds["spellName"].lower(), "other")
-                            killers[ds["name"]][spell_type] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
+                            if ds["name"].lower() not in DeathData.spell_mapping:
+                                potential_spell = ds["spellName"].lower().removeprefix(ds["name"].lower())
 
+                                if potential_spell in ["q", "w", "e", "r"]:
+                                    spell_type = potential_spell
+                                else:
+                                    spell_type = "other"
+                            else:
+                                spell_type = DeathData.spell_mapping.get(ds["name"].lower(), {}).get(ds["spellName"].lower(), "other")
+                            
+                            killers[ds["name"]][spell_type] += (ds["trueDamage"] + ds["magicDamage"] + ds["physicalDamage"])
                             if spell_type == "other":
                                 spell_name = ds["spellName"].lower()
                                 if spell_name == "":
-                                    spell_name = "<empty_spell_name>"
+                                    spell_name = "<unknown>"
                                 killers[ds["name"]]["other_names"].append(spell_name)
 
                     killers_to_attribute_to_renata = []
